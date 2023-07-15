@@ -1,4 +1,4 @@
-from mutagen.mp3 import MP3
+#from mutagen.mp3 import MP3
 
 def getMs(pos,bpm_array_pos,bpm_array_val,resolution,arredondar = False):
     cur_ms = 0
@@ -14,11 +14,11 @@ def getMs(pos,bpm_array_pos,bpm_array_val,resolution,arredondar = False):
 print("Arraste o arquivo .chart para esta janela e aperte Enter:")
 file_input = input()
 if file_input.startswith("\""): file_input = file_input[1:-1]
-file1 = open(file_input, 'r')
-print("Arraste o arquivo .mp3 para esta janela e aperte Enter:")
-mp3_input = input()
-if mp3_input.startswith("\""): mp3_input = mp3_input[1:-1]
-audio = MP3(mp3_input)
+file1 = open(file_input, 'r', encoding='utf-8')
+#print("Arraste o arquivo .mp3 para esta janela e aperte Enter:")
+#mp3_input = input()
+#if mp3_input.startswith("\""): mp3_input = mp3_input[1:-1]
+#audio = MP3(mp3_input)
 arredondar = True
 print("Você gostaria de arredondar a chart pra 24 bps? (S/n):")
 if (input().lower().strip().startswith("n")): arredondar = False
@@ -60,10 +60,21 @@ for line in Lines:
                 star_power[split_key] = sp_split[2]
 # start writing sng
 
+offset = float(sections["Song"]["Offset"])
+resolution = int(sections["Song"]["Resolution"])
 diff = "EXPERT"
 if ("Hard" in chart): diff = "HARD"
 elif ("Medium" in chart): diff = "MEDIUM"
 elif ("Easy" in chart): diff = "EASY"
+length = list(sections[chart].keys())[-1]
+last_note_dur = 0
+for dur in sections[chart][length]:
+    if (dur.startswith("N") and not dur.startswith("N 5") and not dur.startswith("N 6")):
+        end_tick = int(length) + (int(dur.split(' ')[2]))
+        pos = round(getMs(int(end_tick),bpm_array_pos,bpm_array_val,resolution,arredondar) + offset + 3, 3)
+        if pos > last_note_dur: last_note_dur = pos
+length = last_note_dur
+
 out = """<?xml version="1.0"?>
 <Song>
     <Properties>
@@ -78,7 +89,7 @@ out = """<?xml version="1.0"?>
         <PullOffTime>0.25</PullOffTime>
         <Difficulty>""" + diff + """</Difficulty>
         <AllowableErrorTime>0.05</AllowableErrorTime>
-        <Length>""" + str(round(audio.info.length, 3)) + """</Length>
+        <Length>""" + str(length) + """</Length>
         <MusicFileName>""" + sections["Song"]["MusicStream"] + """</MusicFileName>
         <MusicDirectoryHint>./</MusicDirectoryHint>
     </Properties>
@@ -87,8 +98,6 @@ out = """<?xml version="1.0"?>
 """
 
 # note data
-offset = float(sections["Song"]["Offset"])
-resolution = int(sections["Song"]["Resolution"])
 for key, value in sections[chart].items():
     for note_str in value:
         if (note_str.startswith("N") and not note_str.startswith("N 5") and not note_str.startswith("N 6")):
@@ -114,7 +123,7 @@ for key, value in sections[chart].items():
 out += """    </Data>
 </Song>"""
 out_path = file_input + '.sng'
-text_file = open(out_path, "w")
+text_file = open(out_path, "w", encoding='utf-8')
 n = text_file.write(out)
 text_file.close()
 print("Salvo em " + out_path + "; aperte Enter para sair!")
