@@ -19,9 +19,9 @@ file1 = open(file_input, 'r', encoding='utf-8')
 #mp3_input = input()
 #if mp3_input.startswith("\""): mp3_input = mp3_input[1:-1]
 #audio = MP3(mp3_input)
-arredondar = True
-print("Você gostaria de arredondar a chart pra 24 bps? (S/n):")
-if (input().lower().strip().startswith("n")): arredondar = False
+arredondar = False
+print("Você gostaria de arredondar a chart pra 24 bps? (s/N):")
+if (input().lower().strip().startswith("s")): arredondar = True
 chart = "ExpertSingle"
 print("Qual dificuldade/instrumento da chart gostaria de converter? (Deixe vazio para ExpertSingle):")
 chart_input = input()
@@ -69,11 +69,14 @@ elif ("Easy" in chart): diff = "EASY"
 length = list(sections[chart].keys())[-1]
 last_note_dur = 0
 for dur in sections[chart][length]:
-    if (dur.startswith("N") and not dur.startswith("N 5") and not dur.startswith("N 6")):
-        end_tick = int(length) + (int(dur.split(' ')[2]))
+    if (not dur.startswith("N 5") and not dur.startswith("N 6")):
+        end_tick = int(length)
+        if (dur.startswith("N")): end_tick = int(length) + (int(dur.split(' ')[2]))
         pos = round(getMs(int(end_tick),bpm_array_pos,bpm_array_val,resolution,arredondar) + offset + 3, 3)
         if pos > last_note_dur: last_note_dur = pos
 length = last_note_dur
+
+bps = "24.0"
 
 out = """<?xml version="1.0"?>
 <Song>
@@ -83,7 +86,7 @@ out = """<?xml version="1.0"?>
         <Artist>""" + sections["Song"]["Artist"] + """</Artist>
         <Album>No Album Set</Album>
         <Year>0</Year>
-        <BeatsPerSecond>24.0</BeatsPerSecond>
+        <BeatsPerSecond>""" + bps + """</BeatsPerSecond>
         <BeatOffset>0.0</BeatOffset>
         <HammerOnTime>0.25</HammerOnTime>
         <PullOffTime>0.25</PullOffTime>
@@ -122,7 +125,7 @@ for key, value in sections[chart].items():
 # sng end
 out += """    </Data>
 </Song>"""
-out_path = file_input + '.sng'
+out_path = file_input + '.' + chart + '.sng'
 text_file = open(out_path, "w", encoding='utf-8')
 n = text_file.write(out)
 text_file.close()
